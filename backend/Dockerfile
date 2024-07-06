@@ -1,14 +1,16 @@
-FROM python:3.12.3
+FROM python:3.12-slim
 
 WORKDIR /app/
 
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/etc/poetry python3 - && \
-  cd /usr/local/bin && \
-  ln -s /etc/poetry/bin/poetry
+RUN apt-get update && apt-get install -y curl && \ 
+    curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python3 && \
+    cd /usr/local/bin && \
+    ln -s /opt/poetry/bin/poetry && \
+    poetry config virtualenvs.create false
 
 COPY ./pyproject.toml ./poetry.lock* /app/
 
-RUN poetry install
+RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY ./prestart.sh /app/
 
