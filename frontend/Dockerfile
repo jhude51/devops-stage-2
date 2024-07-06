@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20 AS builder
 
 WORKDIR /app
 
@@ -10,4 +10,5 @@ COPY ./ /app/
 
 ARG VITE_API_URL=http://localhost:8000
 
-RUN npm run build
+RUN npm run dev
+
