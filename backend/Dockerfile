@@ -1,25 +1,43 @@
-FROM python:3.12-slim
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH "${PYTHONPATH}:/app"
+# Set working directory
+WORKDIR /app
 
-WORKDIR /app/
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        python3-dev \
+        postgresql-client \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y curl && \ 
-    curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python3 && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create true
 
-COPY pyproject.toml poetry.lock* /app/
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
 
-RUN poetry install --no-dev --no-interaction --no-ansi
+# Copy only the pyproject.toml and poetry.lock files to the container and install dependencies
+COPY pyproject.toml poetry.lock* /app
 
-COPY . /app/
+# Install dependencies
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev --no-interaction --no-ansi
 
+# Copy the rest of the application
+COPY . /app
+
+# Copy and run prestart.sh
+COPY ./prestart.sh /app/prestart.sh
 RUN chmod +x /app/prestart.sh
 
+# Expose port
 EXPOSE 8000
 
-ENTRYPOINT ["poetry", "run", "bash", "-c", "/app/prestart.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Set the PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Run prestart script before starting the app
+# CMD ["bash", "./prestart.sh"] && ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["bash", "-c", "poetry run bash ./prestart.sh && poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"]
