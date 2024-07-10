@@ -24,7 +24,7 @@ services:
       - traefik.http.routers.traefik-dashboard-http.middlewares=https-redirect
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-public-certificates:/certificates
+      - ./certificates:/certificates
     command:
       - --providers.docker
       - --api.insecure=true
@@ -36,9 +36,9 @@ services:
       - --certificatesresolvers.le.acme.email=jhudeyhemi51@gmail.com
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
       - --certificatesresolvers.le.acme.tlschallenge=true
-#      - --accesslog
-#      - --log
-#      - --api
+      - --accesslog
+      - --log
+      - --api
     networks:
       - traefik-public
 
@@ -48,7 +48,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - app-db-data:/var/lib/postgresql/data/pgdata
+      - db-data:/var/lib/postgresql/data/pgdata
     env_file:
       - backend/.env
 
@@ -110,8 +110,8 @@ services:
       - default
     env_file:
       - frontend/.env
-    ports:
-      - 5173:80
+        #    ports:
+        #- 5173:80
     build:
       context: ./frontend
     labels:
@@ -132,8 +132,8 @@ services:
       - traefik.http.middlewares.www-redirect.redirectregex.permanent=true
 
 volumes:
-  app-db-data:
-  traefik-public-certificates:
+  db-data:
+    #  traefik-public-certificates:
 
 networks:
   traefik-public:
